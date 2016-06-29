@@ -86,19 +86,64 @@ extension NSLayoutConstraint {
     
     // MARK:- description override
     
-    // can't get the pointers..
+    static func descriptionForObject(obj: AnyObject) -> String {
+        if obj.respondsToSelector(Selector("accessibilityIdentifier")) {
+            if let accessibilityIdentifier = obj.accessibilityIdentifier {
+                return "\(obj.dynamicType):\(accessibilityIdentifier)[\(unsafeAddressOf(obj))]"
+            }
+        }
+        
+        if obj.respondsToSelector(Selector("identifier")) {
+            if let obj = obj as? UILayoutGuide {
+                return "\(obj.dynamicType):\(obj.identifier)[\(unsafeAddressOf(obj))]"
+            }
+        }
+        
+        return "\(obj.dynamicType):\(unsafeAddressOf(obj))"
+    }
     
-    //    static func descriptionForObject(obj: AnyClass) -> String {
-    //        if obj.respondsToSelector(Selector("accessibilityIdentifier")) {
-    //            if let accessibilityIdentifier = (obj as? UIAccessibilityIdentification)?.accessibilityIdentifier {
-    //                return "\(NSStringFromClass(obj)):\(accessibilityIdentifier)[\(PointerBridge(obj).getCountPtr())]"
-    //            }
-    //        }
-    //        if obj.respondsToSelector(Selector("identifier")) {
-    ////            if let identifier = (obj as? )
-    //        }
-    //        
-    //        return "\(NSStringFromClass(obj)):\(&obj)"
-    //    }
     
+    public override var description: String {
+        get {
+            var des = "<"
+            
+            des += NSLayoutConstraint.descriptionForObject(self)
+            
+            des += " " + NSLayoutConstraint.descriptionForObject(self.firstItem)
+            if self.firstAttribute != .NotAnAttribute {
+                des += "." + NSLayoutConstraint.layoutAttributeDescriptionsByValue()[self.firstAttribute]!
+            }
+            
+            des += " " + NSLayoutConstraint.layoutRelationDescriptionsByValue()[self.relation]!
+            
+            if let secondItem = self.secondItem {
+                des += " " + NSLayoutConstraint.descriptionForObject(secondItem)
+            }
+            if self.secondAttribute != .NotAnAttribute {
+                des += "." + NSLayoutConstraint.layoutAttributeDescriptionsByValue()[self.secondAttribute]!
+            }
+            
+            if self.multiplier != 1 {
+                des += " * \(self.multiplier)"
+            }
+            
+            if self.secondAttribute == .NotAnAttribute {
+                des += " \(self.constant)"
+            }
+            else if self.constant != 0 {
+                des += " \(self.constant < 0 ? "-" : "+") \(abs(self.constant))"
+            }
+            
+            if self.priority != 1000 { // It was UILayoutPriorityRequired but I can't find it
+                des += " ^"
+                if NSLayoutConstraint.layoutPriorityDescriptionsByValue()[self.priority] == nil {
+                    des += "\(self.priority)"
+                }
+            }
+            
+            des += ">"
+            
+            return des
+        }
+    }
 }
